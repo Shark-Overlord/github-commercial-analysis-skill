@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <!-- 必须以 UTF-8 编码保存本文件，避免中文乱码。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{project_name}} 商业化分析</title>
+  <style>
+    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; color: #111827; background: #f8fafc; }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin-top: 28px; font-size: 20px; }
+    p, li { line-height: 1.7; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; margin-top: 16px; }
+    .meta { color: #6b7280; font-size: 14px; }
+    .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .score { background: #eff6ff; border-radius: 8px; padding: 12px; }
+    .score strong { display: block; font-size: 22px; color: #1d4ed8; }
+    .risk { color: #b91c1c; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>{{project_name}} 商业化分析</h1>
+      <div class="meta">{{repo_url}}</div>
+    </header>
+
+    <section class="card">
+      <h2>一句话结论</h2>
+      <p>{{one_sentence_conclusion}}</p>
+    </section>
+
+    <section class="card">
+      <h2>评分</h2>
+      <div class="scores">
+        <div class="score">用户匹配<strong>{{user_fit_score}}</strong></div>
+        <div class="score">商业潜力<strong>{{commercial_score}}</strong></div>
+        <div class="score">MVP 可行<strong>{{mvp_score}}</strong></div>
+        <div class="score">传播价值<strong>{{content_score}}</strong></div>
+        <div class="score">风险可控<strong>{{risk_score}}</strong></div>
+        <div class="score">舆情热度<strong>{{public_opinion_heat}}</strong></div>
+        <div class="score">最终分<strong>{{final_score}}</strong></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>近期热度与需求信号</h2>
+      <p>GitHub 事件热度：{{github_event_heat}}</p>
+      <p>社区需求热度：{{community_demand_heat}}</p>
+      <p>{{public_opinion_summary}}</p>
+      <p>{{public_opinion_data_gaps}}</p>
+    </section>
+
+    <section class="card">
+      <h2>最终决策依据</h2>
+      <p>{{decision_reason}}</p>
+      <p>{{decision_gates}}</p>
+    </section>
+
+    <section class="card">
+      <h2>产品包装方向</h2>
+      <p>{{packaging_direction}}</p>
+    </section>
+
+    <section class="card">
+      <h2>MVP 方案</h2>
+      <p>{{mvp_plan}}</p>
+    </section>
+
+    <section class="card">
+      <h2>变现路径</h2>
+      <p>{{monetization_plan}}</p>
+    </section>
+
+    <section class="card">
+      <h2>风险提示</h2>
+      <p class="risk">{{risk_notes}}</p>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <!-- 必须以 UTF-8 编码保存本文件，避免中文乱码。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub 项目机会对比</title>
+  <style>
+    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; color: #111827; background: #f9fafb; }
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1 { margin: 0 0 16px; font-size: 30px; }
+    p { line-height: 1.7; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; }
+    th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
+    th { background: #f3f4f6; }
+    .best { color: #047857; font-weight: 700; }
+    .risk { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>GitHub 项目机会对比</h1>
+    <p>{{comparison_summary}}</p>
+    <table>
+      <thead>
+        <tr>
+          <th>项目</th>
+          <th>最终分</th>
+          <th>核心机会</th>
+          <th>适合用户</th>
+          <th>MVP 难度</th>
+          <th>舆情热度</th>
+          <th>变现路径</th>
+          <th>风险</th>
+          <th>结论</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{comparison_rows}}
+      </tbody>
+    </table>
+    <section>
+      <h2>舆情证据说明</h2>
+      <p>{{public_opinion_summary}}</p>
+      <p>{{public_opinion_data_gaps}}</p>
+    </section>
+  </main>
+</body>
+</html>

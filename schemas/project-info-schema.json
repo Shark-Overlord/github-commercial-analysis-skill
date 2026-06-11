@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProjectInfo",
+  "description": "单个 GitHub 项目的统一信息结构。",
+  "type": "object",
+  "required": ["repo_full_name", "repo_url", "name", "description"],
+  "properties": {
+    "repo_full_name": {
+      "type": "string",
+      "description": "仓库完整名称，例如 owner/repo。"
+    },
+    "repo_url": {
+      "type": "string",
+      "description": "GitHub 仓库地址。"
+    },
+    "name": {
+      "type": "string",
+      "description": "项目名称。"
+    },
+    "description": {
+      "type": "string",
+      "description": "GitHub 项目描述。"
+    },
+    "readme_summary": {
+      "type": "string",
+      "description": "README 摘要。"
+    },
+    "core_features": {
+      "type": "array",
+      "description": "核心功能列表。",
+      "items": { "type": "string" }
+    },
+    "target_users": {
+      "type": "array",
+      "description": "目标用户列表。",
+      "items": { "type": "string" }
+    },
+    "tech_stack": {
+      "type": "array",
+      "description": "技术栈。",
+      "items": { "type": "string" }
+    },
+    "stars": { "type": "integer", "description": "Star 数。" },
+    "forks": { "type": "integer", "description": "Fork 数。" },
+    "open_issues": { "type": "integer", "description": "开放 Issue 数。" },
+    "last_pushed_at": { "type": "string", "description": "最近推送时间。" },
+    "license": { "type": "string", "description": "License 类型。" },
+    "has_demo": { "type": "boolean", "description": "是否发现 Demo 或在线体验。" },
+    "demo_url": { "type": "string", "description": "Demo 地址。" },
+    "deployment_notes": { "type": "string", "description": "部署方式或部署难度说明。" },
+    "community_signals": {
+      "type": "object",
+      "description": "社区热度信号，保留兼容字段。最终决策应优先使用 public_opinion_signals。",
+      "properties": {
+        "github_events": { "type": "string", "description": "GitHub 近期事件摘要。" },
+        "hacker_news": { "type": "string", "description": "Hacker News 讨论摘要。" }
+      }
+    },
+    "public_opinion_signals": {
+      "type": "object",
+      "description": "舆情与需求热度信号，用于最终 public_opinion_heat 评分。",
+      "properties": {
+        "github_event_heat": {
+          "type": "object",
+          "description": "来自 GH Archive 的近期 GitHub 行为热度。",
+          "properties": {
+            "event_window_days": { "type": "integer", "description": "事件统计窗口天数。" },
+            "star_events": { "type": "integer", "description": "Star 事件数量。" },
+            "fork_events": { "type": "integer", "description": "Fork 事件数量。" },
+            "issue_events": { "type": "integer", "description": "Issue 事件数量。" },
+            "pull_request_events": { "type": "integer", "description": "PR 事件数量。" },
+            "watch_events": { "type": "integer", "description": "Watch 事件数量。" },
+            "total_events": { "type": "integer", "description": "事件总数。" },
+            "trend_summary": { "type": "string", "description": "近期 GitHub 热度摘要。" },
+            "confidence": { "type": "string", "description": "置信度，可使用 high、medium、low。" },
+            "score": { "type": "number", "description": "GitHub 事件热度分，0 到 100。" }
+          }
+        },
+        "community_demand_heat": {
+          "type": "object",
+          "description": "来自 Hacker News Algolia API 的海外技术社区需求热度。",
+          "properties": {
+            "hn_hits": { "type": "integer", "description": "Hacker News 原始命中数量。" },
+            "matched_hn_hits": { "type": "integer", "description": "通过相关性过滤的有效 HN 命中数量。" },
+            "excluded_hn_hits": { "type": "integer", "description": "被排除的噪声 HN 命中数量。" },
+            "hn_points": { "type": "integer", "description": "有效相关讨论点赞或总点赞数。" },
+            "hn_comments": { "type": "integer", "description": "有效相关讨论评论数或总评论数。" },
+            "discussion_titles": {
+              "type": "array",
+              "description": "代表性讨论标题。",
+              "items": { "type": "string" }
+            },
+            "discussion_summary": { "type": "string", "description": "需求、争议和反馈摘要。" },
+            "positive_signals": {
+              "type": "array",
+              "description": "正向需求信号。",
+              "items": { "type": "string" }
+            },
+            "negative_signals": {
+              "type": "array",
+              "description": "负向或风险信号。",
+              "items": { "type": "string" }
+            },
+            "match_confidence": { "type": "string", "description": "HN 命中相关性置信度，可使用 high、medium、low。" },
+            "confidence": { "type": "string", "description": "置信度，可使用 high、medium、low。" },
+            "score": { "type": "number", "description": "社区需求热度分，0 到 100。" }
+          }
+        },
+        "public_opinion_heat_score": {
+          "type": "number",
+          "description": "舆情与需求热度总分，0 到 100，默认由 github_event_heat 和 community_demand_heat 各占 50%。"
+        },
+        "data_gaps": {
+          "type": "array",
+          "description": "舆情数据缺口，例如 GH Archive 不可用或 HN 无命中。",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "risk_notes": {
+      "type": "array",
+      "description": "风险备注。",
+      "items": { "type": "string" }
+    }
+  }
+}

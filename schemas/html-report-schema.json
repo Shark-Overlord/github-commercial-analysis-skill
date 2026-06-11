@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HtmlReport",
+  "description": "GitHub 项目机会 HTML 日报的数据结构。",
+  "type": "object",
+  "required": ["title", "generated_at", "encoding", "user_profile_summary", "executive_summary", "decision_method", "public_opinion_summary", "projects"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "报告标题。"
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "报告生成时间。"
+    },
+    "encoding": {
+      "type": "string",
+      "description": "HTML 文件保存编码，必须为 utf-8，避免中文乱码。",
+      "const": "utf-8"
+    },
+    "charset_meta": {
+      "type": "string",
+      "description": "HTML head 中的字符集声明，必须包含 <meta charset=\"utf-8\">。"
+    },
+    "user_profile_summary": {
+      "type": "string",
+      "description": "用户画像摘要。"
+    },
+    "executive_summary": {
+      "type": "string",
+      "description": "今日结论摘要。"
+    },
+    "decision_method": {
+      "type": "string",
+      "description": "最终排序使用的决策方法，应说明采用 final-decision-criteria.md 的评分公式和硬性降级规则。"
+    },
+    "public_opinion_summary": {
+      "type": "string",
+      "description": "本报告整体的近期热度与需求信号摘要，来自 GH Archive 和 Hacker News Algolia API。"
+    },
+    "projects": {
+      "type": "array",
+      "description": "进入最终报告的项目列表。",
+      "items": {
+        "type": "object",
+        "required": ["name", "repo_url", "recommendation_level", "scores", "project_intro", "project_meta", "summary", "decision_reason", "decision_gates", "public_opinion_summary"],
+        "properties": {
+          "name": { "type": "string", "description": "项目名称。" },
+          "repo_url": { "type": "string", "description": "仓库地址。" },
+          "recommendation_level": { "type": "string", "description": "推荐等级。" },
+          "scores": {
+            "type": "object",
+            "description": "项目评分。",
+            "required": ["user_fit", "commercial_potential", "mvp_feasibility", "content_virality", "risk_control", "public_opinion_heat", "github_event_heat", "community_demand_heat", "final_score"],
+            "properties": {
+              "user_fit": { "type": "number", "description": "用户匹配分。" },
+              "commercial_potential": { "type": "number", "description": "商业潜力分。" },
+              "mvp_feasibility": { "type": "number", "description": "MVP 可行性分，分数越高表示越容易在用户时间预算内落地。" },
+              "mvp_difficulty": { "type": "number", "description": "兼容旧字段。若输入仍使用 MVP 难度分，生成报告前必须转换为 mvp_feasibility。" },
+              "content_virality": { "type": "number", "description": "内容传播分。" },
+              "risk_control": { "type": "number", "description": "风险可控分。" },
+              "public_opinion_heat": { "type": "number", "description": "舆情与需求热度分，由 GH Archive 和 HN Algolia 共同决定。" },
+              "github_event_heat": { "type": "number", "description": "来自 GH Archive 的近期 GitHub 事件热度分。" },
+              "community_demand_heat": { "type": "number", "description": "来自 Hacker News Algolia API 的海外社区需求热度分。" },
+              "final_score": { "type": "number", "description": "按 final-decision-criteria.md 公式计算的最终分。" }
+            }
+          },
+          "project_intro": { "type": "string", "description": "简明中文项目简介，只说明这个项目是干什么的、解决什么问题、主要适用场景；不得直接堆叠英文 README 描述、Stars、License 或 topics。" },
+          "project_meta": { "type": "string", "description": "项目基础信息，可包含语言/技术栈、Stars、License 和核心 topics，用于补充项目简介。" },
+          "summary": { "type": "string", "description": "项目机会摘要，说明该项目为什么适合当前用户包装、复刻或做内容。" },
+          "decision_reason": { "type": "string", "description": "最终排序和推荐等级的决策理由。" },
+          "decision_gates": {
+            "type": "array",
+            "description": "触发的硬性门槛或降级规则，例如 License 不明确、法律风险、2 周不可落地。",
+            "items": { "type": "string" }
+          },
+          "public_opinion_summary": { "type": "string", "description": "GH Archive 与 Hacker News Algolia 舆情证据摘要。" },
+          "mvp_plan": { "type": "string", "description": "MVP 计划摘要。" },
+          "monetization": { "type": "string", "description": "变现路径摘要。" },
+          "content_topics": {
+            "type": "array",
+            "description": "内容选题建议。",
+            "items": { "type": "string" }
+          },
+          "risk_notes": {
+            "type": "array",
+            "description": "风险提示。",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "报告中使用的默认假设。",
+      "items": { "type": "string" }
+    },
+    "data_sources": {
+      "type": "array",
+      "description": "报告使用的数据源。",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+# Runtime data and user-specific configuration
+data/
+github-opportunity-daily-report.html
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

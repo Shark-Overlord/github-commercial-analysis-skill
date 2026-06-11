@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataSourceConfig",
+  "description": "4 个 API 数据源的配置结构，用于在项目搜索和分析前确认访问方式、认证需求和降级策略。",
+  "type": "object",
+  "required": ["allow_network_access", "sources"],
+  "properties": {
+    "allow_network_access": {
+      "type": "boolean",
+      "description": "是否允许联网访问 GitHub REST API、GH Archive 和 Hacker News Algolia API。"
+    },
+    "save_raw_data": {
+      "type": "boolean",
+      "description": "是否保存原始采集结果到本地 data 目录。"
+    },
+    "sources": {
+      "type": "array",
+      "description": "本次分析使用的 4 个 API 数据源配置。",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "api_config_required", "setup_method", "setup_url_or_command", "auth_required", "purpose"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "数据源名称，只能是 github_rest_search_api、github_repo_api、gh_archive 或 hacker_news_algolia_api。",
+            "enum": ["github_rest_search_api", "github_repo_api", "gh_archive", "hacker_news_algolia_api"]
+          },
+          "status": {
+            "type": "string",
+            "description": "数据源状态，可使用 enabled、disabled 或 degraded。",
+            "enum": ["enabled", "disabled", "degraded"]
+          },
+          "api_config_required": {
+            "type": "boolean",
+            "description": "是否需要先配置 API 访问方式。本 Skill 的 4 个数据源均应为 true。"
+          },
+          "base_url_or_access_method": {
+            "type": "string",
+            "description": "API base URL、公共查询入口或访问方式说明。"
+          },
+          "setup_method": {
+            "type": "string",
+            "description": "用户配置方式，可使用 browser_auth、copy_paste_config、env_var、github_cli、public_endpoint 或 anonymous。",
+            "enum": ["browser_auth", "copy_paste_config", "env_var", "github_cli", "public_endpoint", "anonymous"]
+          },
+          "setup_url_or_command": {
+            "type": "string",
+            "description": "告诉用户去哪里配置的 URL 或命令，例如 gh auth login --web、GitHub Token 创建页、GH Archive 地址或 HN Algolia API 地址。"
+          },
+          "auth_required": {
+            "type": "boolean",
+            "description": "是否需要 Token、账号或其他认证。GitHub REST Search API 和 GitHub Repo API 通常建议使用 GitHub Token。"
+          },
+          "credential_source": {
+            "type": "string",
+            "description": "凭据来源说明，例如环境变量、GitHub CLI、用户提供或不需要。不得记录真实 Token。"
+          },
+          "copy_paste_fields": {
+            "type": "array",
+            "description": "需要用户复制粘贴给执行者的非敏感配置字段。Token 等敏感值不得写入最终报告。",
+            "items": { "type": "string" }
+          },
+          "secret_handling": {
+            "type": "string",
+            "description": "敏感凭据处理规则，例如只保存在环境变量、本次会话临时使用、不得写入报告。"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "该数据源在分析中的用途。"
+          },
+          "fallback": {
+            "type": "string",
+            "description": "数据源不可用时的降级方案。"
+          },
+          "confidence_impact": {
+            "type": "string",
+            "description": "数据源不可用或降级后对报告可信度的影响。"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "name": { "const": "github_rest_search_api" } },
+            "required": ["name"]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "name": { "const": "github_repo_api" } },
+            "required": ["name"]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "name": { "const": "gh_archive" } },
+            "required": ["name"]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": { "name": { "const": "hacker_news_algolia_api" } },
+            "required": ["name"]
+          }
+        }
+      ]
+    },
+    "blocked_sources": {
+      "type": "array",
+      "description": "用户明确禁止或当前环境不可访问的 API 数据源。",
+      "items": { "type": "string" }
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "数据源配置阶段采用的默认假设。",
+      "items": { "type": "string" }
+    }
+  }
+}

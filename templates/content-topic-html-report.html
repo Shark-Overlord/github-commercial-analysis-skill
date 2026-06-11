@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <!-- 必须以 UTF-8 编码保存本文件，避免中文乱码。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{project_name}} 内容传播方案</title>
+  <style>
+    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; color: #111827; background: #fff7ed; }
+    main { max-width: 880px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin-top: 24px; font-size: 20px; }
+    p, li { line-height: 1.7; }
+    .card { background: #fff; border: 1px solid #fed7aa; border-radius: 8px; padding: 18px; margin-top: 16px; }
+    .platform { display: inline-block; margin: 4px 6px 0 0; padding: 4px 8px; border-radius: 999px; background: #ffedd5; color: #9a3412; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{{project_name}} 内容传播方案</h1>
+    <section class="card">
+      <h2>传播等级</h2>
+      <p>{{virality_level}}</p>
+      <p>{{platform_tags}}</p>
+    </section>
+    <section class="card">
+      <h2>标题方向</h2>
+      <ul>{{title_ideas}}</ul>
+    </section>
+    <section class="card">
+      <h2>封面卖点</h2>
+      <p>{{cover_hook}}</p>
+    </section>
+    <section class="card">
+      <h2>30 秒演示脚本</h2>
+      <p>{{demo_script}}</p>
+    </section>
+    <section class="card">
+      <h2>转化方式</h2>
+      <p>{{conversion_action}}</p>
+    </section>
+  </main>
+</body>
+</html>

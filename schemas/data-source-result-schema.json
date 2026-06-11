@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataSourceResult",
+  "description": "不同数据源采集结果的统一结构。",
+  "type": "object",
+  "required": ["source_name", "status", "collected_at"],
+  "properties": {
+    "source_name": {
+      "type": "string",
+      "description": "数据源名称，只能对应 4 个 API 数据源：github_rest_search_api、github_repo_api、gh_archive 或 hacker_news_algolia_api。"
+    },
+    "status": {
+      "type": "string",
+      "description": "采集状态，可使用 success、partial、failed 或 skipped。"
+    },
+    "collected_at": {
+      "type": "string",
+      "description": "采集时间。"
+    },
+    "query": {
+      "type": "string",
+      "description": "采集查询条件或 API 路径。"
+    },
+    "items_count": {
+      "type": "integer",
+      "description": "返回数据数量。"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "失败或部分失败原因。"
+    },
+    "raw_reference": {
+      "type": "string",
+      "description": "原始数据文件、链接或证据位置。"
+    },
+    "collection_window": {
+      "type": "string",
+      "description": "数据采集时间窗口，例如最近 7 天或最近 30 天。"
+    },
+    "event_counts": {
+      "type": "object",
+      "description": "GH Archive 事件统计，用于 github_event_heat。",
+      "properties": {
+        "star_events": { "type": "integer", "description": "Star 事件数量。" },
+        "fork_events": { "type": "integer", "description": "Fork 事件数量。" },
+        "issue_events": { "type": "integer", "description": "Issue 事件数量。" },
+        "pull_request_events": { "type": "integer", "description": "PR 事件数量。" },
+        "watch_events": { "type": "integer", "description": "Watch 事件数量。" },
+        "total_events": { "type": "integer", "description": "事件总数。" }
+      }
+    },
+    "hacker_news_summary": {
+      "type": "object",
+      "description": "Hacker News Algolia 讨论统计，用于 community_demand_heat。",
+      "properties": {
+        "hn_hits": { "type": "integer", "description": "HN 原始命中数量。" },
+        "matched_hn_hits": { "type": "integer", "description": "通过相关性过滤的有效 HN 命中数量。" },
+        "excluded_hn_hits": { "type": "integer", "description": "被排除的噪声 HN 命中数量。" },
+        "hn_points": { "type": "integer", "description": "有效相关讨论的点赞数或代表性点赞数。" },
+        "hn_comments": { "type": "integer", "description": "有效相关讨论的评论数或代表性评论数。" },
+        "match_confidence": { "type": "string", "description": "HN 命中相关性置信度，可使用 high、medium、low。" },
+        "discussion_summary": { "type": "string", "description": "讨论摘要。" }
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "description": "采集结果置信度，可使用 high、medium、low。"
+    },
+    "demand_heat_notes": {
+      "type": "string",
+      "description": "该数据源对近期热度或需求热度的解释。"
+    }
+  }
+}

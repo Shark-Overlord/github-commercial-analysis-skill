@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserProfile",
+  "description": "用户画像结构，用于驱动 GitHub 项目搜索、筛选、评分和推荐。",
+  "type": "object",
+  "required": ["user_type", "target_market", "target_outputs", "technical_level", "time_budget", "risk_preference", "required_answers"],
+  "properties": {
+    "user_type": {
+      "type": "string",
+      "description": "基于当前 Skill 使用者身份和使用目的综合判断出的用户类型，例如独立开发者、AI 工具站运营者、内容创作者、企业服务创业者、业务负责人或商业分析者。"
+    },
+    "required_answers": {
+      "type": "object",
+      "description": "用户画像阶段必须补齐的必达问题答案。答案可以来自用户原话或可靠推断；不能只靠默认假设。",
+      "required": ["skill_user_identity", "skill_user_goal", "project_direction", "target_user", "target_output", "mvp_time_budget", "payment_goal", "technical_level", "risk_boundary"],
+      "properties": {
+        "skill_user_identity": {
+          "type": "string",
+          "description": "当前使用这个 Skill 的人是谁，例如程序员、产品经理、运营、内容创作者、创业者、企业老板、销售、咨询顾问或投资/研究人员。"
+        },
+        "skill_user_goal": {
+          "type": "string",
+          "description": "当前使用这个 Skill 的目的，例如找项目做产品、找内容选题、做商业调研、找客户方案、做竞品分析、找学习案例或寻找投资/合作机会。"
+        },
+        "project_direction": {
+          "type": "string",
+          "description": "用户想寻找的 GitHub 项目方向，例如 agent、RAG、浏览器自动化、图片工具或数据分析。"
+        },
+        "target_user": {
+          "type": "string",
+          "description": "最终产品的目标付费用户，例如个人用户、独立开发者、中小企业、运营人员或教育机构。"
+        },
+        "target_output": {
+          "type": "string",
+          "description": "最终产品形态，例如 Web 工具站、SaaS、小程序、浏览器插件、API、课程案例。"
+        },
+        "mvp_time_budget": {
+          "type": "string",
+          "description": "MVP 时间预算，例如 1 天、3-7 天、2-4 周。"
+        },
+        "payment_goal": {
+          "type": "string",
+          "description": "收费方式或商业验证目标，例如按次付费、订阅、模板售卖、部署服务或企业定制。"
+        },
+        "technical_level": {
+          "type": "string",
+          "description": "用户可承担的技术复杂度，例如只会部署、会前后端、会 Python/Node、能接模型 API。"
+        },
+        "risk_boundary": {
+          "type": "string",
+          "description": "明确不碰的风险边界，例如爬虫、账号自动化、金融交易、隐私数据或 License 不明项目。"
+        }
+      }
+    },
+    "required_answer_sources": {
+      "type": "object",
+      "description": "必达问题答案来源。可使用 user_provided、inferred 或 defaulted；必达问题不应只依赖 defaulted。",
+      "properties": {
+        "project_direction": { "type": "string" },
+        "skill_user_identity": { "type": "string" },
+        "skill_user_goal": { "type": "string" },
+        "target_user": { "type": "string" },
+        "target_output": { "type": "string" },
+        "mvp_time_budget": { "type": "string" },
+        "payment_goal": { "type": "string" },
+        "technical_level": { "type": "string" },
+        "risk_boundary": { "type": "string" }
+      }
+    },
+    "missing_required_questions": {
+      "type": "array",
+      "description": "仍然缺失的必达问题 ID。进入采集任务前必须为空。",
+      "items": { "type": "string" }
+    },
+    "target_market": {
+      "type": "string",
+      "description": "目标市场，例如中文个人用户、中文企业用户或海外开发者。"
+    },
+    "target_outputs": {
+      "type": "array",
+      "description": "当前 Skill 使用者希望产出的结果，例如 MVP 工具站、内容选题、SaaS、插件、客户方案、商业调研报告或课程案例。",
+      "items": { "type": "string" }
+    },
+    "technical_level": {
+      "type": "string",
+      "description": "技术能力等级，可使用 low_code、basic_web、full_stack、ai_engineering 或 infrastructure。"
+    },
+    "time_budget": {
+      "type": "string",
+      "description": "可投入时间，例如 1 天、3-7 天、2-4 周或长期投入。"
+    },
+    "money_budget": {
+      "type": "string",
+      "description": "资金预算，例如无预算、低预算、中等预算或可采购服务。"
+    },
+    "content_platforms": {
+      "type": "array",
+      "description": "计划使用的内容平台，例如小红书、抖音、公众号、B 站或知乎。",
+      "items": { "type": "string" }
+    },
+    "monetization_preferences": {
+      "type": "array",
+      "description": "偏好的变现方式，例如订阅、按次付费、模板售卖、企业定制或内容引流。",
+      "items": { "type": "string" }
+    },
+    "risk_preference": {
+      "type": "string",
+      "description": "风险偏好，可使用 conservative、moderate 或 aggressive。"
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "因用户信息缺失而采用的默认假设。",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <!-- 必须以 UTF-8 编码保存本文件，避免中文乱码。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{report_title}}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, "Microsoft YaHei", sans-serif; color: #111827; background: #f6f8fb; font-size: 16px; }
+    a { color: #2563eb; overflow-wrap: anywhere; }
+    .page { width: 100%; max-width: 1120px; margin: 0 auto; padding: 18px 12px 40px; }
+    header { margin-bottom: 18px; }
+    h1 { margin: 0 0 8px; font-size: 24px; line-height: 1.3; }
+    h2 { margin: 24px 0 10px; font-size: 19px; line-height: 1.35; }
+    h3 { margin: 0 0 10px; font-size: 17px; line-height: 1.45; }
+    p { margin: 10px 0 0; line-height: 1.72; }
+    .meta { color: #6b7280; font-size: 13px; line-height: 1.55; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; overflow-wrap: anywhere; }
+    .repo-title { color: #111827; text-decoration: none; }
+    .repo-title:hover { color: #2563eb; text-decoration: underline; }
+    .rank { display: inline-block; min-width: 32px; padding: 4px 8px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-weight: 700; text-align: center; }
+    .tag { display: inline-block; margin: 4px 6px 0 0; padding: 4px 8px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+    .risk { color: #b91c1c; }
+    .score { font-weight: 700; color: #047857; }
+    .meta-line { color: #4b5563; font-size: 14px; }
+    footer { margin-top: 32px; color: #6b7280; font-size: 13px; }
+    @media (min-width: 760px) {
+      .page { padding: 32px 20px 48px; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 20px; }
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>{{report_title}}</h1>
+      <div class="meta">生成时间：{{generated_at}} ｜ 默认文件名：github-opportunity-daily-report.html</div>
+    </header>
+
+    <section class="card">
+      <h2>用户画像摘要</h2>
+      <p>{{user_profile_summary}}</p>
+    </section>
+
+    <section class="card">
+      <h2>今日结论</h2>
+      <p>{{executive_summary}}</p>
+    </section>
+
+    <section>
+      <h2>项目机会排序</h2>
+      <!-- 每张项目卡片标题必须可点击跳转到对应 GitHub 仓库，并展示中文项目简介、基础信息、商业化判断、final_score、public_opinion_heat、github_event_heat、community_demand_heat、decision_reason 和 decision_gates。 -->
+      <div class="grid">
+        {{project_cards}}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>近期热度与需求信号</h2>
+      <p>{{public_opinion_summary}}</p>
+    </section>
+
+    <section class="card">
+      <h2>默认假设与数据来源</h2>
+      <p>{{assumptions}}</p>
+      <p>{{data_sources}}</p>
+    </section>
+
+    <footer>本报告仅用于商业化机会初筛，不构成法律、投资或合规意见。</footer>
+  </main>
+</body>
+</html>

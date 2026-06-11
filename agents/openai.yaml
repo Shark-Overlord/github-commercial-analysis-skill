@@ -1,0 +1,8 @@
+interface:
+  display_name: "GitHub 商业化分析"
+  short_description: "筛选 GitHub 项目并生成商业化机会 HTML 日报"
+  brand_color: "#2563EB"
+  default_prompt: "Use $github-commercial-analysis-skill to configure data sources, analyze GitHub open source projects for commercialization opportunities, and generate a single-file HTML report."
+
+policy:
+  allow_implicit_invocation: true

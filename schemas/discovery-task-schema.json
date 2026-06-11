@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DiscoveryTask",
+  "description": "GitHub 项目采集任务结构，由用户画像转化而来。",
+  "type": "object",
+  "required": ["search_keywords", "exclude_keywords", "min_stars", "updated_within_days", "candidate_limit", "shortlist_limit", "final_report_limit"],
+  "properties": {
+    "search_keywords": {
+      "type": "array",
+      "description": "GitHub 搜索关键词，优先使用英文。",
+      "items": { "type": "string" }
+    },
+    "topics": {
+      "type": "array",
+      "description": "GitHub Topics 过滤条件。",
+      "items": { "type": "string" }
+    },
+    "exclude_keywords": {
+      "type": "array",
+      "description": "需要排除的风险或无关关键词。",
+      "items": { "type": "string" }
+    },
+    "languages": {
+      "type": "array",
+      "description": "优先搜索的编程语言。",
+      "items": { "type": "string" }
+    },
+    "min_stars": {
+      "type": "integer",
+      "description": "最低 Star 数。"
+    },
+    "updated_within_days": {
+      "type": "integer",
+      "description": "最近多少天内有更新。"
+    },
+    "candidate_limit": {
+      "type": "integer",
+      "description": "候选项目采集数量上限。"
+    },
+    "shortlist_limit": {
+      "type": "integer",
+      "description": "初筛短名单数量上限。"
+    },
+    "final_report_limit": {
+      "type": "integer",
+      "description": "最终报告项目数量上限。"
+    },
+    "checks": {
+      "type": "object",
+      "description": "需要执行的数据检查项。",
+      "properties": {
+        "readme": { "type": "boolean", "description": "是否检查 README。" },
+        "license": { "type": "boolean", "description": "是否检查 License。" },
+        "release": { "type": "boolean", "description": "是否检查 Release。" },
+        "github_events": { "type": "boolean", "description": "是否检查 GitHub 近期事件。" },
+        "hacker_news": { "type": "boolean", "description": "是否检查 Hacker News 讨论。" }
+      }
+    }
+  }
+}
