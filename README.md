@@ -43,29 +43,63 @@ gh auth login --web
 gh auth status
 ```
 
-## 安装方式
+## 一键安装
 
-### 方式 1：安装到 Codex skills 目录
+### 推荐：npx 安装
+
+不需要手动 clone 仓库，直接运行：
+
+```bash
+npx --yes github:Shark-Overlord/github-commercial-analysis-skill
+```
+
+这个命令会把 Skill 安装到：
+
+```text
+~/.codex/skills/github-commercial-analysis-skill
+```
+
+如果以后发布到 npm，命令可以进一步缩短为：
+
+```bash
+npx github-commercial-analysis-skill
+```
+
+### Windows PowerShell 备用方式
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/Shark-Overlord/github-commercial-analysis-skill/main/install.ps1 | iex"
+```
+
+### macOS / Linux 备用方式
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Shark-Overlord/github-commercial-analysis-skill/main/install.sh | bash
+```
+
+安装后在 Codex 中这样调用：
+
+```text
+Use $github-commercial-analysis-skill to find GitHub projects that I can turn into a paid MVP and generate an HTML report.
+```
+
+## 手动安装
+
+安装到 Codex skills 目录：
 
 ```powershell
 cd $env:USERPROFILE\.codex\skills
 git clone https://github.com/Shark-Overlord/github-commercial-analysis-skill.git
 ```
 
-安装后在 Codex 中可以这样调用：
-
-```text
-Use $github-commercial-analysis-skill to find GitHub projects that I can turn into a paid MVP and generate an HTML report.
-```
-
-### 方式 2：作为普通项目运行
+作为普通项目运行：
 
 ```powershell
 git clone https://github.com/Shark-Overlord/github-commercial-analysis-skill.git
 cd github-commercial-analysis-skill
 ```
 
-安装依赖：
+可选依赖：
 
 ```powershell
 D:\anaconda3\python.exe -m pip install requests

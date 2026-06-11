@@ -1,0 +1,33 @@
+{
+  "name": "github-commercial-analysis-skill",
+  "version": "0.1.0",
+  "description": "Codex skill for GitHub open-source commercialization analysis and HTML opportunity reports.",
+  "license": "UNLICENSED",
+  "bin": {
+    "github-commercial-analysis-skill": "scripts/install-skill.mjs"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "agents",
+    "assets",
+    "criteria",
+    "examples",
+    "prompts",
+    "schemas",
+    "scripts/*.mjs",
+    "scripts/*.py",
+    "sop",
+    "strategies",
+    "templates",
+    "tools",
+    "install.ps1",
+    "install.sh"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "validate": "python scripts/validate_skill_package.py"
+  }
+}

@@ -79,12 +79,27 @@ def check_openai_yaml() -> None:
         fail("agents/openai.yaml default_prompt must mention $github-commercial-analysis-skill")
 
 
+def check_package_json() -> None:
+    path = ROOT / "package.json"
+    if not path.exists():
+        fail("package.json does not exist")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("name") != "github-commercial-analysis-skill":
+        fail("package.json name must be github-commercial-analysis-skill")
+    bin_path = (data.get("bin") or {}).get("github-commercial-analysis-skill")
+    if bin_path != "scripts/install-skill.mjs":
+        fail("package.json bin must point to scripts/install-skill.mjs")
+    if not (ROOT / bin_path).exists():
+        fail(f"package.json bin target does not exist: {bin_path}")
+
+
 def main() -> None:
     body = check_skill_frontmatter()
     check_references(body)
     check_json()
     check_html_templates()
     check_openai_yaml()
+    check_package_json()
     print("[OK] skill package validation passed")
 
 
