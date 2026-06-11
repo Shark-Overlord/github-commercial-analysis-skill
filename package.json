@@ -3,6 +3,23 @@
   "version": "0.1.0",
   "description": "Codex skill for GitHub open-source commercialization analysis and HTML opportunity reports.",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shark-Overlord/github-commercial-analysis-skill.git"
+  },
+  "homepage": "https://github.com/Shark-Overlord/github-commercial-analysis-skill#readme",
+  "bugs": {
+    "url": "https://github.com/Shark-Overlord/github-commercial-analysis-skill/issues"
+  },
+  "keywords": [
+    "codex-skill",
+    "github-analysis",
+    "commercial-analysis",
+    "opportunity-discovery",
+    "html-report",
+    "agent",
+    "mcp"
+  ],
   "bin": {
     "github-commercial-analysis-skill": "scripts/install-skill.mjs"
   },
@@ -29,5 +46,9 @@
   },
   "scripts": {
     "validate": "python scripts/validate_skill_package.py"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

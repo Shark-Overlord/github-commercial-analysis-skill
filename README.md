@@ -45,12 +45,12 @@ gh auth status
 
 ## 一键安装
 
-### 推荐：npx 安装
+### 推荐：npm / npx 安装
 
-不需要手动 clone 仓库，直接运行：
+已经发布到 npm，直接运行：
 
 ```bash
-npx --yes github:Shark-Overlord/github-commercial-analysis-skill
+npx github-commercial-analysis-skill
 ```
 
 这个命令会把 Skill 安装到：
@@ -59,10 +59,18 @@ npx --yes github:Shark-Overlord/github-commercial-analysis-skill
 ~/.codex/skills/github-commercial-analysis-skill
 ```
 
-如果以后发布到 npm，命令可以进一步缩短为：
+如果想固定版本，也可以这样安装：
 
 ```bash
-npx github-commercial-analysis-skill
+npx github-commercial-analysis-skill@0.1.0
+```
+
+### 备用：GitHub 源安装
+
+如果 npm 暂时不可用，再使用 GitHub 源：
+
+```bash
+npx --yes github:Shark-Overlord/github-commercial-analysis-skill
 ```
 
 ### Windows PowerShell 备用方式
