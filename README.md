@@ -2,6 +2,24 @@
 
 一个用于筛选 GitHub 开源项目商业化机会的 Codex Skill。它会基于用户画像、项目数据、舆情热度、MVP 可行性和风险规则，生成可直接打开的单文件 HTML 项目机会日报。
 
+## Install with npx
+
+```bash
+npx github-commercial-analysis-skill
+```
+
+安装后会写入：
+
+```text
+~/.codex/skills/github-commercial-analysis-skill
+```
+
+如果你想固定当前版本：
+
+```bash
+npx github-commercial-analysis-skill@0.1.0
+```
+
 默认输出文件：
 
 ```text
