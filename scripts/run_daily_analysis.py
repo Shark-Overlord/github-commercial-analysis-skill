@@ -27,13 +27,20 @@ PROCESSED_DIR = DATA_DIR / "processed"
 CONFIG_DIR = DATA_DIR / "config"
 REPORT_PATH = WORKSPACE / "github-opportunity-daily-report.html"
 PROFILE_PATH = CONFIG_DIR / "current-user-profile.json"
+HISTORY_PATH = PROCESSED_DIR / "recommendation-history.json"
+REPORT_ARCHIVE_DIR = WORKSPACE / "github-opportunity-reports"
+HISTORY_REPORT_PATH = WORKSPACE / "github-opportunity-history.html"
 
-for directory in (RAW_DIR, PROCESSED_DIR, CONFIG_DIR):
+for directory in (RAW_DIR, PROCESSED_DIR, CONFIG_DIR, REPORT_ARCHIVE_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 
 USER_PROFILE: dict | None = None
 DISCOVERY_TASK: dict | None = None
+
+DEFAULT_STABLE_SLOTS = 3
+DEFAULT_EXPLORE_SLOTS = 7
+DEFAULT_COOLDOWN_DAYS = 14
 
 REQUIRED_PROFILE_FIELDS = [
     "skill_user_identity",
@@ -307,11 +314,20 @@ def build_discovery_task(profile: dict) -> dict:
         "topics": list(dict.fromkeys(topics))[:10],
         "exclude_keywords": list(dict.fromkeys(exclude)),
         "languages": ["TypeScript", "JavaScript", "Python", "Vue", "Rust"],
-        "min_stars": 100,
-        "updated_within_days": 180,
-        "candidate_limit": 120,
-        "shortlist_limit": 20,
+        "min_stars": 20,
+        "max_stars": 20000,
+        "small_project_max_stars": 5000,
+        "updated_within_days": 90,
+        "active_within_days": 30,
+        "created_within_days": 180,
+        "daily_keyword_limit": 8,
+        "candidate_limit": 160,
+        "shortlist_limit": 30,
         "final_report_limit": 10,
+        "stable_slots": DEFAULT_STABLE_SLOTS,
+        "explore_slots": DEFAULT_EXPLORE_SLOTS,
+        "cooldown_days": DEFAULT_COOLDOWN_DAYS,
+        "search_modes": ["fresh_created", "recent_active", "small_recent"],
         "checks": {
             "readme": True,
             "license": True,
@@ -329,7 +345,16 @@ def task_cache_slug(task: dict) -> str:
             "required_topics": task.get("required_topics", []),
             "exclude_keywords": task.get("exclude_keywords", []),
             "updated_within_days": task.get("updated_within_days"),
+            "active_within_days": task.get("active_within_days"),
+            "created_within_days": task.get("created_within_days"),
             "min_stars": task.get("min_stars"),
+            "max_stars": task.get("max_stars"),
+            "small_project_max_stars": task.get("small_project_max_stars"),
+            "daily_keyword_limit": task.get("daily_keyword_limit"),
+            "search_modes": task.get("search_modes", []),
+            "stable_slots": task.get("stable_slots"),
+            "explore_slots": task.get("explore_slots"),
+            "cooldown_days": task.get("cooldown_days"),
         },
         ensure_ascii=False,
         sort_keys=True,
@@ -535,35 +560,94 @@ def decode_readme(readme_json: dict) -> str:
     return content
 
 
+def rotated_keywords(keywords: list[str], limit: int) -> list[str]:
+    clean_keywords = [keyword for keyword in keywords if safe_text(keyword).strip()]
+    if not clean_keywords or limit <= 0 or len(clean_keywords) <= limit:
+        return clean_keywords
+    offset = datetime.now().timetuple().tm_yday % len(clean_keywords)
+    rotated = clean_keywords[offset:] + clean_keywords[:offset]
+    return rotated[:limit]
+
+
 def search_candidates() -> list[dict]:
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=DISCOVERY_TASK["updated_within_days"])).date().isoformat()
+    updated_cutoff = (datetime.now(timezone.utc) - timedelta(days=DISCOVERY_TASK["updated_within_days"])).date().isoformat()
+    active_cutoff = (datetime.now(timezone.utc) - timedelta(days=DISCOVERY_TASK["active_within_days"])).date().isoformat()
+    created_cutoff = (datetime.now(timezone.utc) - timedelta(days=DISCOVERY_TASK["created_within_days"])).date().isoformat()
+    min_stars = int(DISCOVERY_TASK["min_stars"])
+    max_stars = int(DISCOVERY_TASK["max_stars"])
+    small_max_stars = int(DISCOVERY_TASK["small_project_max_stars"])
     seen: dict[str, dict] = {}
-    for keyword in DISCOVERY_TASK["search_keywords"]:
-        query = f"{keyword} stars:>{DISCOVERY_TASK['min_stars']} pushed:>{cutoff} archived:false"
-        try:
-            data = run_gh_api(
-                "search/repositories",
-                {
-                    "q": query,
-                    "sort": "stars",
-                    "order": "desc",
-                    "per_page": "12",
-                },
+    search_modes = [
+        {
+            "name": "fresh_created",
+            "query": "stars:{min_stars}..{max_stars} created:>{created_cutoff} pushed:>{active_cutoff} archived:false",
+            "sort": "updated",
+            "order": "desc",
+            "per_page": "6",
+        },
+        {
+            "name": "recent_active",
+            "query": "stars:{min_stars}..{max_stars} pushed:>{active_cutoff} archived:false",
+            "sort": "updated",
+            "order": "desc",
+            "per_page": "6",
+        },
+        {
+            "name": "small_recent",
+            "query": "stars:{min_stars}..{small_max_stars} pushed:>{updated_cutoff} archived:false",
+            "per_page": "6",
+        },
+    ]
+    daily_keywords = rotated_keywords(DISCOVERY_TASK["search_keywords"], int(DISCOVERY_TASK["daily_keyword_limit"]))
+    DISCOVERY_TASK["daily_search_keywords"] = daily_keywords
+    for keyword in daily_keywords:
+        for mode in search_modes:
+            filters = mode["query"].format(
+                min_stars=min_stars,
+                max_stars=max_stars,
+                small_max_stars=small_max_stars,
+                updated_cutoff=updated_cutoff,
+                active_cutoff=active_cutoff,
+                created_cutoff=created_cutoff,
             )
-        except Exception as exc:
-            print(f"GitHub search failed for {keyword}: {exc}", file=sys.stderr)
-            continue
-        for item in data.get("items", []):
-            full_name = item.get("full_name")
-            if not full_name or full_name in seen:
+            query = f"{keyword} {filters}"
+            params = {
+                "q": query,
+                "per_page": mode["per_page"],
+            }
+            if mode.get("sort"):
+                params["sort"] = mode["sort"]
+                params["order"] = mode.get("order", "desc")
+            try:
+                data = run_gh_api("search/repositories", params)
+            except Exception as exc:
+                print(f"GitHub search failed for {keyword} ({mode['name']}): {exc}", file=sys.stderr)
                 continue
-            text = repo_text(item)
-            if has_any(text, RISK_WORDS):
-                continue
-            seen[full_name] = item
-        time.sleep(0.2)
+            for item in data.get("items", []):
+                full_name = item.get("full_name")
+                if not full_name:
+                    continue
+                text = repo_text(item)
+                if has_any(text, RISK_WORDS):
+                    continue
+                existing = seen.get(full_name)
+                if existing:
+                    modes = set(existing.get("discovery_modes") or [])
+                    modes.add(mode["name"])
+                    existing["discovery_modes"] = sorted(modes)
+                    queries = set(existing.get("discovery_queries") or [])
+                    queries.add(query)
+                    existing["discovery_queries"] = sorted(queries)
+                    continue
+                item["discovery_modes"] = [mode["name"]]
+                item["discovery_queries"] = [query]
+                seen[full_name] = item
+            time.sleep(0.2)
     candidates = list(seen.values())
-    candidates.sort(key=lambda x: int(x.get("stargazers_count") or 0), reverse=True)
+    candidates.sort(
+        key=lambda x: (candidate_relevance(x), len(x.get("discovery_modes") or []), int(x.get("stargazers_count") or 0)),
+        reverse=True,
+    )
     return candidates[: DISCOVERY_TASK["candidate_limit"]]
 
 
@@ -584,12 +668,25 @@ def candidate_relevance(repo: dict) -> float:
     if pushed_at:
         try:
             days = (datetime.now(timezone.utc) - datetime.fromisoformat(pushed_at.replace("Z", "+00:00"))).days
-            recency = 20 if days <= 14 else 15 if days <= 60 else 10 if days <= 180 else 4
+            recency = 28 if days <= 7 else 24 if days <= 30 else 15 if days <= 90 else 6
         except Exception:
             recency = 0
+    newness = 0
+    created_at = repo.get("created_at")
+    if created_at:
+        try:
+            days = (datetime.now(timezone.utc) - datetime.fromisoformat(created_at.replace("Z", "+00:00"))).days
+            newness = 20 if days <= 90 else 14 if days <= 180 else 7 if days <= 365 else 0
+        except Exception:
+            newness = 0
     stars = int(repo.get("stargazers_count") or 0)
-    star_score = min(20, math.log10(max(stars, 1)) * 4)
-    return score + recency + star_score
+    if stars <= int(DISCOVERY_TASK.get("small_project_max_stars", 5000)):
+        star_score = 14
+    elif stars <= int(DISCOVERY_TASK.get("max_stars", 20000)):
+        star_score = 8
+    else:
+        star_score = 0
+    return score + recency + newness + star_score
 
 
 def enrich_repo(repo: dict) -> dict:
@@ -1275,6 +1372,361 @@ def write_json(path: Path, data: object) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def project_full_name(project: dict) -> str:
+    repo = project.get("repo") if isinstance(project.get("repo"), dict) else project
+    return safe_text(repo.get("full_name")).strip()
+
+
+def load_recommendation_history() -> dict:
+    if HISTORY_PATH.exists():
+        try:
+            history = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            history = {"runs": []}
+    else:
+        history = {"runs": []}
+    history.setdefault("runs", [])
+    if not history["runs"]:
+        previous_path = PROCESSED_DIR / "fresh-commercial-analysis.json"
+        if previous_path.exists():
+            try:
+                previous_projects = json.loads(previous_path.read_text(encoding="utf-8"))
+                previous_date = datetime.fromtimestamp(previous_path.stat().st_mtime).date().isoformat()
+                history["runs"].append(
+                    {
+                        "date": previous_date,
+                        "generated_at": datetime.fromtimestamp(previous_path.stat().st_mtime).isoformat(timespec="seconds"),
+                        "mode": "bootstrap_from_existing_report",
+                        "projects": [
+                            {
+                                "rank": index,
+                                "full_name": project_full_name(project),
+                                "slot": "bootstrap",
+                            }
+                            for index, project in enumerate(previous_projects, 1)
+                            if project_full_name(project)
+                        ],
+                    }
+                )
+            except Exception:
+                pass
+    return history
+
+
+def recent_history_names(history: dict, cooldown_days: int) -> set[str]:
+    cutoff = datetime.now().date() - timedelta(days=cooldown_days)
+    names: set[str] = set()
+    for run in history.get("runs", []):
+        try:
+            run_date = datetime.fromisoformat(safe_text(run.get("date"))[:10]).date()
+        except Exception:
+            continue
+        if run_date < cutoff:
+            continue
+        for project in run.get("projects", []):
+            name = safe_text(project.get("full_name")).lower()
+            if name:
+                names.add(name)
+    return names
+
+
+def pushed_within_days(repo: dict, days_limit: int) -> bool:
+    pushed_at = repo.get("pushed_at")
+    if not pushed_at:
+        return False
+    try:
+        days = (datetime.now(timezone.utc) - datetime.fromisoformat(pushed_at.replace("Z", "+00:00"))).days
+    except Exception:
+        return False
+    return days <= days_limit
+
+
+def created_within_days(repo: dict, days_limit: int) -> bool:
+    created_at = repo.get("created_at")
+    if not created_at:
+        return False
+    try:
+        days = (datetime.now(timezone.utc) - datetime.fromisoformat(created_at.replace("Z", "+00:00"))).days
+    except Exception:
+        return False
+    return days <= days_limit
+
+
+def exploration_score(project: dict) -> float:
+    repo = project["repo"]
+    score = float(project["scores"]["final_score"])
+    modes = set(repo.get("discovery_modes") or [])
+    if "fresh_created" in modes:
+        score += 18
+    if "recent_active" in modes:
+        score += 10
+    if "small_recent" in modes:
+        score += 12
+    if pushed_within_days(repo, 30):
+        score += 12
+    if created_within_days(repo, 180):
+        score += 18
+    elif created_within_days(repo, 365):
+        score += 8
+    stars = int(repo.get("stars") or 0)
+    if stars <= 5000:
+        score += 14
+    elif stars <= 20000:
+        score += 6
+    else:
+        score -= 10
+    return score
+
+
+def select_final_projects(projects: list[dict], history: dict) -> list[dict]:
+    final_limit = int(DISCOVERY_TASK.get("final_report_limit", 10))
+    stable_slots = min(int(DISCOVERY_TASK.get("stable_slots", DEFAULT_STABLE_SLOTS)), final_limit)
+    explore_slots = max(0, min(int(DISCOVERY_TASK.get("explore_slots", DEFAULT_EXPLORE_SLOTS)), final_limit - stable_slots))
+    cooldown_days = int(DISCOVERY_TASK.get("cooldown_days", DEFAULT_COOLDOWN_DAYS))
+    recent_names = recent_history_names(history, cooldown_days)
+
+    stable = projects[:stable_slots]
+    selected_names = {project_full_name(project).lower() for project in stable}
+    for project in stable:
+        project["selection_slot"] = "stable"
+
+    exploration_pool = [
+        project
+        for project in projects
+        if project_full_name(project).lower() not in selected_names
+        and project_full_name(project).lower() not in recent_names
+    ]
+    exploration_pool.sort(key=exploration_score, reverse=True)
+    explore = exploration_pool[:explore_slots]
+    for project in explore:
+        project["selection_slot"] = "explore"
+        selected_names.add(project_full_name(project).lower())
+
+    if len(stable) + len(explore) < final_limit:
+        fallback = [
+            project
+            for project in projects
+            if project_full_name(project).lower() not in selected_names
+        ]
+        fallback.sort(key=lambda item: (item["scores"]["final_score"], item["scores"]["risk_control"]), reverse=True)
+        for project in fallback[: final_limit - len(stable) - len(explore)]:
+            project["selection_slot"] = "fallback"
+            selected_names.add(project_full_name(project).lower())
+            explore.append(project)
+
+    return (stable + explore)[:final_limit]
+
+
+def archive_daily_report(projects: list[dict]) -> dict:
+    now = datetime.now()
+    date_text = now.date().isoformat()
+    stamp = now.strftime("%Y%m%d-%H%M%S")
+    daily_dir = REPORT_ARCHIVE_DIR / date_text
+    daily_dir.mkdir(parents=True, exist_ok=True)
+
+    report_name = f"github-opportunity-daily-report-{stamp}.html"
+    analysis_name = f"fresh-commercial-analysis-{stamp}.json"
+    report_path = daily_dir / report_name
+    analysis_path = daily_dir / analysis_name
+    latest_report_path = daily_dir / "latest.html"
+    latest_analysis_path = daily_dir / "latest-commercial-analysis.json"
+
+    report_path.write_bytes(REPORT_PATH.read_bytes())
+    latest_report_path.write_bytes(REPORT_PATH.read_bytes())
+    analysis_payload = json.dumps(projects, ensure_ascii=False, indent=2).encode("utf-8")
+    analysis_path.write_bytes(analysis_payload)
+    latest_analysis_path.write_bytes(analysis_payload)
+
+    return {
+        "date": date_text,
+        "stamp": stamp,
+        "report_path": str(report_path),
+        "report_relative_path": report_path.relative_to(WORKSPACE).as_posix(),
+        "latest_report_path": str(latest_report_path),
+        "latest_report_relative_path": latest_report_path.relative_to(WORKSPACE).as_posix(),
+        "analysis_path": str(analysis_path),
+        "analysis_relative_path": analysis_path.relative_to(WORKSPACE).as_posix(),
+    }
+
+
+def generate_history_report(history: dict) -> None:
+    runs = sorted(
+        history.get("runs", []),
+        key=lambda item: safe_text(item.get("generated_at")),
+        reverse=True,
+    )
+    cards = []
+    for run in runs:
+        projects = run.get("projects", [])
+        top_projects = [safe_text(project.get("full_name")) for project in projects[:5] if project.get("full_name")]
+        stable_count = sum(1 for project in projects if project.get("slot") == "stable")
+        explore_count = sum(1 for project in projects if project.get("slot") == "explore")
+        fallback_count = sum(1 for project in projects if project.get("slot") == "fallback")
+        report_href = safe_text(run.get("report_relative_path"))
+        link_html = (
+            f'<a class="open-link" href="{escape_attr(report_href)}">打开日报</a>'
+            if report_href
+            else '<span class="muted">无归档 HTML</span>'
+        )
+        cards.append(
+            '<article class="history-card">'
+            f'<div class="card-head"><div><p class="date">{escape(run.get("date"))}</p>'
+            f'<h2>{escape(run.get("generated_at"))}</h2></div>{link_html}</div>'
+            f'<p class="meta">模式：{escape(run.get("mode"))} · Stable {stable_count} · Explore {explore_count} · Fallback {fallback_count}</p>'
+            f'<p class="projects">{escape("；".join(top_projects))}</p>'
+            '</article>'
+        )
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    body = "\n".join(cards) if cards else '<p class="empty">暂无历史日报。</p>'
+    html_text = f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub 商业化机会日报历史</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      --ink: #17211b;
+      --muted: #68746d;
+      --line: #d8ded8;
+      --paper: #f7f5ef;
+      --panel: #ffffff;
+      --accent: #0f7b5f;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      font-family: "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #f7f5ef 0%, #eaf1ed 100%);
+    }}
+    main {{
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }}
+    .page-head {{
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+    }}
+    .updated, .muted, .meta {{
+      color: var(--muted);
+    }}
+    .history-list {{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }}
+    .history-card {{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(23, 33, 27, 0.06);
+    }}
+    .card-head {{
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+    }}
+    .date {{
+      margin: 0 0 4px;
+      color: var(--accent);
+      font-weight: 700;
+    }}
+    h2 {{
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+    }}
+    .open-link {{
+      flex: 0 0 auto;
+      color: #ffffff;
+      background: var(--accent);
+      text-decoration: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }}
+    .projects {{
+      margin: 10px 0 0;
+      line-height: 1.7;
+    }}
+    .empty {{
+      padding: 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }}
+    @media (max-width: 640px) {{
+      main {{ width: min(100% - 24px, 1080px); padding-top: 28px; }}
+      .page-head, .card-head {{ display: block; }}
+      .open-link {{ display: inline-block; margin-top: 12px; }}
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <header class="page-head">
+      <div>
+        <h1>GitHub 商业化机会日报历史</h1>
+        <p class="updated">更新时间：{escape(generated_at)} · 共 {len(runs)} 次记录</p>
+      </div>
+    </header>
+    <section class="history-list">
+      {body}
+    </section>
+  </main>
+</body>
+</html>
+"""
+    HISTORY_REPORT_PATH.write_text(html_text, encoding="utf-8")
+
+
+def update_recommendation_history(history: dict, projects: list[dict], archive_info: dict) -> None:
+    run = {
+        "date": archive_info.get("date") or datetime.now().date().isoformat(),
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "mode": "explore_exploit_v1",
+        "stable_slots": int(DISCOVERY_TASK.get("stable_slots", DEFAULT_STABLE_SLOTS)),
+        "explore_slots": int(DISCOVERY_TASK.get("explore_slots", DEFAULT_EXPLORE_SLOTS)),
+        "cooldown_days": int(DISCOVERY_TASK.get("cooldown_days", DEFAULT_COOLDOWN_DAYS)),
+        "report_path": archive_info.get("report_path"),
+        "report_relative_path": archive_info.get("report_relative_path"),
+        "latest_report_path": archive_info.get("latest_report_path"),
+        "latest_report_relative_path": archive_info.get("latest_report_relative_path"),
+        "analysis_path": archive_info.get("analysis_path"),
+        "analysis_relative_path": archive_info.get("analysis_relative_path"),
+        "projects": [
+            {
+                "rank": index,
+                "full_name": project_full_name(project),
+                "slot": project.get("selection_slot", "unknown"),
+                "final_score": project["scores"]["final_score"],
+            }
+            for index, project in enumerate(projects, 1)
+        ],
+    }
+    history.setdefault("runs", [])
+    history["runs"].append(run)
+    history["runs"] = history["runs"][-60:]
+    write_json(HISTORY_PATH, history)
+    generate_history_report(history)
+
+
 def generate_report(projects: list[dict], data_gaps: list[str]) -> None:
     template = (ROOT / "templates" / "daily-html-report.html").read_text(encoding="utf-8")
     profile = USER_PROFILE["required_answers"]
@@ -1352,6 +1804,7 @@ def main() -> None:
     else:
         candidates = search_candidates()
     write_json(candidates_path, candidates)
+    write_json(PROCESSED_DIR / "fresh-discovery-task.json", DISCOVERY_TASK)
     if enriched_path.exists() and "--force" not in sys.argv:
         enriched = json.loads(enriched_path.read_text(encoding="utf-8"))
     else:
@@ -1359,7 +1812,8 @@ def main() -> None:
         enriched = [enrich_repo(repo) for repo in short]
     write_json(enriched_path, enriched)
 
-    analysis_repos = enriched[:10]
+    history = load_recommendation_history()
+    analysis_repos = enriched[: DISCOVERY_TASK["shortlist_limit"]]
     gh_signals = scan_gh_archive(analysis_repos, hours=3)
     projects = []
     data_gaps = []
@@ -1404,8 +1858,11 @@ def main() -> None:
                 "language": repo.get("language"),
                 "topics": repo.get("topics") or [],
                 "license": repo.get("license_key"),
+                "created_at": repo.get("created_at"),
                 "pushed_at": repo.get("pushed_at"),
                 "homepage": repo.get("homepage"),
+                "discovery_modes": repo.get("discovery_modes") or [],
+                "discovery_queries": repo.get("discovery_queries") or [],
             },
             "recommendation_level": level,
             "rank_gate_max_rank": max_rank,
@@ -1434,27 +1891,21 @@ def main() -> None:
         projects.append(project)
 
     projects.sort(key=lambda item: (item["scores"]["final_score"], item["scores"]["risk_control"]), reverse=True)
-    top3_locked = []
-    others = []
-    for item in projects:
-        if item["rank_gate_max_rank"] <= 3:
-            others.append(item)
-        else:
-            if len(top3_locked) < 3:
-                top3_locked.append(item)
-            else:
-                others.append(item)
-    final_projects = (top3_locked + others)[: DISCOVERY_TASK["final_report_limit"]]
+    final_projects = select_final_projects(projects, history)
     write_json(PROCESSED_DIR / "fresh-commercial-analysis.json", final_projects)
     generate_report(final_projects, data_gaps)
     problems = validate_report()
     if problems:
         raise SystemExit("\n".join(problems))
+    archive_info = archive_daily_report(final_projects)
+    update_recommendation_history(history, final_projects, archive_info)
     print(json.dumps({
         "candidates": len(candidates),
         "shortlist": len(enriched),
         "final_projects": len(final_projects),
         "report": str(REPORT_PATH),
+        "archived_report": archive_info["report_path"],
+        "history_report": str(HISTORY_REPORT_PATH),
         "top_projects": [item["repo"]["full_name"] for item in final_projects[:5]],
     }, ensure_ascii=False, indent=2))
 
